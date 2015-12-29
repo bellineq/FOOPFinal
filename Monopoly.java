@@ -4,6 +4,8 @@ public class Monopoly{
 
 	public static void theGame(){
 		Computer pc = new Computer(10,1,3,22000);
+		DisplayCenter.showAllChars(pc.getChars());
+		DisplayCenter.showAllSpaces(pc.getMap().getSpaces());
 		pc.play();
 	
 	}
@@ -28,7 +30,7 @@ class Computer{
 		charNum = playerNum + AINum;
 		initialMoney = newInitialMoney;
 		chars = new ArrayList<Character> ();
-
+		map = new Map();
 		createMap(mapSize);
 		createAI(AINum);
 		createPlayer(playerNum);
@@ -38,8 +40,7 @@ class Computer{
 		
 	public void createMap(int num){
 		for(int i=0;i<num;i++){
-			String name = "Property_";
-			name.concat(Integer.toString(i));
+			String name = "Property_"+Integer.toString(i);
 			int price = (i*500)%5000;
 			int rent = (i*200)%2000;
 			Property p = new Property(name,i,price,rent);
@@ -49,8 +50,7 @@ class Computer{
 	
 	public void createAI(int num){
 		for(int i=0;i<num;i++){
-			String name = "Computer_";
-			name.concat(Integer.toString(i));
+			String name = "Computer_"+Integer.toString(i);
 			AI ai = new AI(name,initialMoney,mapSize);
 			chars.add(ai);
 		}
@@ -74,6 +74,7 @@ class Computer{
 		DisplayCenter.showMove(c,step,position);
 		DisplayCenter.showSpaceStatus(s);
 		s.trigger(c);
+		DisplayCenter.showCharStatus(c);
 	}
 	
 	public ArrayList<Character> findBrokeChar(){
@@ -105,7 +106,13 @@ class Computer{
 		DisplayCenter.showEndGame();
 	}
 
+	public ArrayList<Character> getChars(){
+		return chars;
+	}
 
+	public Map getMap(){
+		return map;
+	}
 
 }// End Computer Class
 
@@ -172,14 +179,14 @@ class Property extends Space{
 	}
 
 	public void trigger(Character c) {
-		if (owner.equals(null)){
+		if (owner == null){
 			boolean decision = c.decideToBuy(this);
 			if(decision){
 				c.buy(this);
 				DisplayCenter.showBuyProperty(c,this);
 			}
 		}
-		else{
+		else if (!owner.equals(c)){
 			c.pay(rent);
 			owner.earn(rent);
 			DisplayCenter.showPayRent(c,owner,rent);
@@ -332,13 +339,14 @@ class Dice{
 
 class DisplayCenter{
 	public static void showCharStatus(Character c){	
-		System.out.println("Player name is" + c.getName());
+		System.out.println("Player name is " + c.getName());
 		System.out.println("Player has " + c.getMoney() + " dollars");
 		System.out.println("Player has the following lands");
 		ArrayList<Property> deeds = c.getDeeds();
 		for (int i = 0; i < deeds.size(); i++){
 			System.out.println(deeds.get(i).getName());
 		}
+		System.out.println();
 	}
 
 	public static boolean askToBuy(Character c, Property p){
@@ -382,18 +390,19 @@ class DisplayCenter{
 	}
 
 	public static void showPropertyStatus(Property p){
-		System.out.print("Type: Property");
-		System.out.print("Position: "+Integer.toString(p.getPosition()));
-		System.out.print("Name: "+p.getName());
-		System.out.print("Price: "+Integer.toString(p.getPrice()));
-		System.out.print("Rent: "+Integer.toString(p.getRent()));
+		System.out.println("Type: Property");
+		System.out.println("Position: "+Integer.toString(p.getPosition()));
+		System.out.println("Name: "+p.getName());
+		System.out.println("Price: "+Integer.toString(p.getPrice()));
+		System.out.println("Rent: "+Integer.toString(p.getRent()));
 		Character owner = p.getOwner();
-		if (owner.equals(null)){
-			System.out.print("This property is owned by no one");
+		if (owner == null){
+			System.out.println("This property is owned by no one");
 		}
 		else{
-			System.out.print("This property is owned by "+owner.getName());	
+			System.out.println("This property is owned by "+owner.getName());	
 		}	
+		System.out.println();
 	}
 
 	public static void showBuyProperty(Character c, Property p){
@@ -405,7 +414,20 @@ class DisplayCenter{
 	};
 
 	public static void showEndGame(){
-		System.out.print("Game Ends");
+		System.out.println("Game Ends");
+	}
+
+	public static void showAllChars(ArrayList<Character> list){
+		System.out.println("All Char info:");
+		for(int i =0;i<list.size();i++){
+			showCharStatus(list.get(i));
+		}
+	}
+	public static void showAllSpaces(ArrayList<Space> list){
+		System.out.println("All Space info:");
+		for(int i =0;i<list.size();i++){
+			showSpaceStatus(list.get(i));
+		}
 	}
 }
 
