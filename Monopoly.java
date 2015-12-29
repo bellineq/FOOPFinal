@@ -3,6 +3,8 @@ import java.util.*;
 public class Monopoly{
 
 	public static void theGame(){
+		Computer pc = new Computer(10,1,3,22000);
+		pc.play();
 	
 	}
 	
@@ -25,6 +27,7 @@ class Computer{
 		mapSize = newMapSize;
 		charNum = playerNum + AINum;
 		initialMoney = newInitialMoney;
+		chars = new ArrayList<Character> ();
 
 		createMap(mapSize);
 		createAI(AINum);
@@ -38,7 +41,7 @@ class Computer{
 			String name = "Property_";
 			name.concat(Integer.toString(i));
 			int price = (i*500)%5000;
-			int rent = (i*10)%1000;
+			int rent = (i*200)%2000;
 			Property p = new Property(name,i,price,rent);
 			map.addSpace(p);
 		}
@@ -61,6 +64,46 @@ class Computer{
 		}
 	}
 
+	public void round(Character c){
+	// what happen in one round with some character
+		Dice dice = new Dice();
+		int step = dice.roll();
+		c.move(step);
+		int position = c.getPosition();
+		Space s = map.getSpaces().get(position);
+		DisplayCenter.showMove(c,step,position);
+		DisplayCenter.showSpaceStatus(s);
+		s.trigger(c);
+	}
+	
+	public ArrayList<Character> findBrokeChar(){
+		ArrayList<Character> brokeChar = new ArrayList<Character> ();
+		for(int i=0; i<chars.size(); i++){
+			Character c = chars.get(i);
+			if (c.getMoney()<0){
+				brokeChar.add(c);
+			}
+		}
+		return brokeChar;
+	}
+
+	
+	public void play(){
+		boolean someOneBroke = false;
+		while(!someOneBroke){
+			for(int i =0;i<chars.size();i++){
+				Character c = chars.get(i);
+				round(c);
+				ArrayList<Character> brokeChar = findBrokeChar();
+				if (brokeChar.size()>0){
+					someOneBroke = true;
+					DisplayCenter.showLoser(brokeChar);
+					break;
+				}						
+			}
+		}
+		DisplayCenter.showEndGame();
+	}
 
 
 
@@ -69,7 +112,12 @@ class Computer{
 
 class Map{
 	private ArrayList<Space> spaces;
-	private int size = 0;
+	private int size;
+	
+	Map(){
+		spaces = new ArrayList<Space>();
+		size = 0;
+	}
 	
 	public void addSpace(Space s){
 		spaces.add(s);
@@ -99,6 +147,12 @@ abstract class Space{
 		return name;
 	}
 
+	public int getPosition(){
+		return position;
+	}
+	
+	public abstract void description();
+
 	public abstract void trigger(Character c);
 
 
@@ -122,11 +176,13 @@ class Property extends Space{
 			boolean decision = c.decideToBuy(this);
 			if(decision){
 				c.buy(this);
+				DisplayCenter.showBuyProperty(c,this);
 			}
 		}
 		else{
 			c.pay(rent);
 			owner.earn(rent);
+			DisplayCenter.showPayRent(c,owner,rent);
 		}
 	}
 
@@ -143,12 +199,16 @@ class Property extends Space{
 		return price;
 	}
 
-	public String getOwner(){
-		return owner.getName();
+	public Character getOwner(){
+		return owner;
 	}
 
 	public int getRent(){
 		return rent;
+	}
+
+	public void description(){
+		DisplayCenter.showPropertyStatus(this);
 	}
 
 }// End Property class
@@ -161,16 +221,20 @@ abstract class Character{
 	private int mapSize = 0;
 	private ArrayList <Property> deeds;
 
-	Character(){};
+	Character(){
+		deeds = new ArrayList <Property>();
+	};
 	
 	Character(String newCharName){
 		name = newCharName;
+		deeds = new ArrayList <Property>();
 	}
 	
 	Character(String newCharName, int newMoney, int newMapSize){
 		name = newCharName;
 		money = newMoney;
 		mapSize = newMapSize;
+		deeds = new ArrayList <Property>();
 	}
 
 	public void move(int step){
@@ -267,7 +331,7 @@ class Dice{
 
 
 class DisplayCenter{
-	public static void showStatus(Character c){	
+	public static void showCharStatus(Character c){	
 		System.out.println("Player name is" + c.getName());
 		System.out.println("Player has " + c.getMoney() + " dollars");
 		System.out.println("Player has the following lands");
@@ -300,6 +364,49 @@ class DisplayCenter{
 		return res;
 	}
 
+	public static void showMove(Character c, int step, int finalPos){	
+		System.out.println(c.getName()+" rolls "+step+"!");
+		System.out.println("moves to position "+finalPos);
+	}
+
+	public static void showSpaceStatus(Space s){	
+		s.description();
+	}
+
+	public static void showLoser(ArrayList<Character> chars){
+		System.out.print("The Loser: ");
+		for (int i=0; i<chars.size(); i++){
+			System.out.println(chars.get(i).getName());
+			
+		}
+	}
+
+	public static void showPropertyStatus(Property p){
+		System.out.print("Type: Property");
+		System.out.print("Position: "+Integer.toString(p.getPosition()));
+		System.out.print("Name: "+p.getName());
+		System.out.print("Price: "+Integer.toString(p.getPrice()));
+		System.out.print("Rent: "+Integer.toString(p.getRent()));
+		Character owner = p.getOwner();
+		if (owner.equals(null)){
+			System.out.print("This property is owned by no one");
+		}
+		else{
+			System.out.print("This property is owned by "+owner.getName());	
+		}	
+	}
+
+	public static void showBuyProperty(Character c, Property p){
+		System.out.println(c.getName()+" bought "+p.getName()+" with "+p.getPrice());
+	};
+
+	public static void showPayRent(Character payer, Character owner, int rent){
+		System.out.println(payer.getName()+" pays "+rent+" to "+owner.getName());	
+	};
+
+	public static void showEndGame(){
+		System.out.print("Game Ends");
+	}
 }
 
 
